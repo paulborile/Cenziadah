@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Paul Borile
+#
+# nfpm config for the .deb and .rpm packages. Built by `make packages`, which
+# sets VERSION (from internal/version) and ARCH (Go arch: amd64, arm64).
+name: cenziadah
+arch: ${ARCH}
+platform: linux
+version: ${VERSION}
+release: 1
+section: admin
+priority: optional
+maintainer: Paul Borile
+description: |
+  Runtime-integrity monitor for Linux processes.
+  Detects in-memory tampering of running programs (injected code, inline hooks)
+  and post-exploitation signs (a service starting a shell, interpreter, network
+  tool or dropped binary). Watches all processes; alerts in the journal and
+  optionally by e-mail.
+vendor: Paul Borile
+homepage: https://github.com/paulborile/cenziadah
+license: AGPL-3.0-or-later
+
+contents:
+  - src: dist/build/cenziadah
+    dst: /usr/bin/cenziadah
+    file_info:
+      mode: 0755
+  - src: packaging/cenziadah-watch.service
+    dst: /usr/lib/systemd/system/cenziadah-watch.service
+    file_info:
+      mode: 0644
+  - src: packaging/cenziadah.default
+    dst: /etc/default/cenziadah
+    type: config|noreplace
+    file_info:
+      mode: 0644
+  - src: README.md
+    dst: /usr/share/doc/cenziadah/README.md
+    file_info:
+      mode: 0644
+  - src: CHANGELOG.md
+    dst: /usr/share/doc/cenziadah/CHANGELOG.md
+    file_info:
+      mode: 0644
+  - src: LICENSE
+    dst: /usr/share/doc/cenziadah/LICENSE
+    file_info:
+      mode: 0644
+
+scripts:
+  postinstall: packaging/scripts/postinstall.sh
+  preremove: packaging/scripts/preremove.sh
+  postremove: packaging/scripts/postremove.sh
+
+overrides:
+  deb:
+    suggests:
+      - mail-transport-agent

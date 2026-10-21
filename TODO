@@ -1,0 +1,52 @@
+This project code name is Cenziadah ( 摻假的 ) which is how adultered sounds in chinese : the main goal of this project is to identify if a linux running process (for now) has been modified while in execution by malware code that arrived in execution in the process itself. The initial application will be very narrow : identify if com.whatsapp instance running on waydroid on a local intel linux machine has been compromised by a any type of memory-corruption vulnerability (e.g., remote code execution via buffer overflow or image parsing bugs).
+
+I assume that we will be doing runtime inspection, memory forensics, and behavioral analysis but suggestions are welcome.
+
+Memory Forensics & Runtime Integrity
+Exploits that breach WhatsApp often rely on memory corruption in native C/C++ libraries (such as libwhatsapp.so, image processing engines, or VoIP codecs). Detecting this requires examining the process's runtime memory space.
+
+Executing Shellcode / Anonymous Memory Region Inspection:
+
+Executable & Writable Memory Pages (RWX): Modern platforms enforce W^X (Write XOR Execute) and SELinux policies. If a runtime memory dump of the com.whatsapp process reveals memory pages that are marked both writable and executable (rwx), or executable pages not backed by a signed ELF/Mach-O file on disk (anonymous executable mappings), it strongly indicates in-memory code injection or dynamic shellcode allocation.
+
+Module Integrity vs. Disk: Compare the .text (code) sections of loaded shared libraries (e.g., libwhatsapp.so, libcrypto.so) in memory against their official signed binary counterparts on disk. Mismatches in instruction bytes signal inline function hooking, API patching, or memory-tampering payloads.
+
+Control Flow Integrity (CFI) Violations & Stack Corruption:
+
+Check the process thread backtraces. Stack-pivoting (redirecting the Stack Pointer SP to an allocated heap region to perform ROP/JOP chains) results in corrupted or unresolvable call stacks that fail standard stack-unwinding checks.
+
+2. Sandbox Escapes & Process Lineage
+Application-level exploits against WhatsApp rarely stay confined to the WhatsApp sandbox if the attacker’s goal is persistent surveillance (e.g., Commercial Off-The-Shelf spyware like Pegasus or Predator). A WhatsApp RCE is typically followed immediately by a local privilege escalation (LPE) exploit to escape the app container.
+
+Process Tree Anomalies:
+
+WhatsApp should not spawn unauthorized child processes (e.g., /system/bin/sh, /system/bin/app_process, or unknown standalone ELF binaries). Inspecting the process tree for any process where PPID corresponds to com.whatsapp is a primary indicator of compromise (IoC).
+
+Descriptor & Socket Intrusions:
+
+Inspect file descriptors (/proc/<pid>/fd/ on Android). WhatsApp maintains specific file descriptors (local SQLite databases, sockets connecting to Meta/WhatsApp edge IPs). Finding open handles to sensitive path locations outside its sandbox (e.g., /dev/kmem, raw storage block devices, or other app sandboxes) signals a sandbox escape.
+
+
+3. Traffic Anomalies & Network Telemetry
+If an exploit succeeds, the compromised process will either exfiltrate payload data over its established signaling channel or establish a secondary Command and Control (C2) connection.
+
+Non-Standard Protocol Sockets:
+
+WhatsApp communicates primarily over TLS/Noise protocol tunnels to defined IP ranges owned by Meta (AS32934 / AS63293). If the com.whatsapp process opens outbound TCP/UDP sockets to non-Meta IP addresses or unverified domain infrastructures, flag it for exfiltration inspection.
+
+Traffic Inconsistencies:
+
+Compare network packet payload size against user activity. Large background uploads occurring when the user is not actively making calls, backing up data, or sending media often point to unauthorized memory or database exfiltration.
+
+4. Application State & Storage Artifact Checks
+An exploit often corrupts or alters persistent database structures and key-value stores maintained in the app's private sandbox directory (/data/data/com.whatsapp/ on Android or /var/mobile/Containers/Data/Application/<UUID>/ on iOS).
+
+Unregistered Linked Devices:
+
+Check axolotl.db / msgstore.db or the app's internal key-value configuration. Verify if unauthorized web/desktop sessions (linked devices) were registered via exploited API calls without triggering the user-facing QR scanning UI.
+
+Database WAL (Write-Ahead Log) Anomalies:
+
+Forensic inspection of msgstore.db-wal can reveal SQL queries executed outside normal user interaction patterns, such as mass unencrypted queries targeting contact lists (wa.db) or message histories performed in millisecond bursts.
+
+

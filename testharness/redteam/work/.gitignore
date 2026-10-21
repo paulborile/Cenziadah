@@ -1,0 +1,3 @@
+# transient red-team run artifacts — never commit
+*
+!.gitignore

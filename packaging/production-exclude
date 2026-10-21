@@ -1,0 +1,11 @@
+# Paths of the committed tree that are NOT published to the public GitHub repo
+# by `make production`. One rsync exclude pattern per line (anchored at the
+# repo root with a leading /). Comments and blank lines are ignored.
+
+# Baselines learned on our own production containers (host details).
+/data/
+
+# Prebuilt test binaries (an exploit and a deliberately vulnerable victim):
+# publish the sources, not executables built on this machine.
+/testharness/exploit/exploit
+/testharness/victim/victim

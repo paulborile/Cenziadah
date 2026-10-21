@@ -1,0 +1,21 @@
+# Options for cenziadah-watch.service (cenziadah watch --json $CENZIADAH_ARGS).
+# After editing: systemctl restart cenziadah-watch
+#
+# Common options:
+#   --interval 10s            idle time between the end of a sweep and the next
+#   --pace 1ms                pause after each process within a sweep (0 = none)
+#   --mail-to ADDR            e-mail new alerts (and a startup summary) to ADDR
+#                             through the local sendmail (an MTA must be installed)
+#   --mail-min medium         lowest severity mailed: low|medium|high|critical
+#   --mail-max-per-hour 20    rate limit for alert mails (the journal keeps everything)
+#   --sendmail PATH           sendmail program (default /usr/sbin/sendmail); must be
+#                             root-owned and not writable by others
+#   --mail-from ADDR          From address (default: the MTA's configured sender)
+#   --no-auto-learn           do not learn programs first seen after start
+#   --skip-exe PATH=REASON    do not inspect an executable (reason is reported)
+#
+# Example (ALL options inside ONE pair of quotes):
+#   CENZIADAH_ARGS="--interval 10s --mail-to ops@example.com"
+# Check before restarting:
+#   cenziadah watch --check-config --interval 10s --mail-to ops@example.com
+CENZIADAH_ARGS="--interval 10s"

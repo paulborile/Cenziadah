@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Paul Borile
+#
+# cenziadah continuous monitoring of all processes. Configure in
+# /etc/default/cenziadah (CENZIADAH_ARGS), then:
+#   systemctl enable --now cenziadah-watch
+# Events (JSON lines) go to the journal:
+#   journalctl -u cenziadah-watch -o cat
+# Note: at every (re)start cenziadah learns its baseline from the state of the
+# host at that moment.
+
+[Unit]
+Description=cenziadah runtime-integrity monitor (all processes)
+Documentation=https://github.com/paulborile/cenziadah
+After=network.target
+# A broken configuration must end in "failed" (visible in systemctl --failed),
+# not in an endless silent restart loop: at most 5 starts in 5 minutes.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/default/cenziadah
+# Validate the options first, so a mistake is reported as one clear line.
+ExecStartPre=/usr/bin/cenziadah watch --check-config $CENZIADAH_ARGS
+ExecStart=/usr/bin/cenziadah watch --json $CENZIADAH_ARGS
+Restart=on-failure
+RestartSec=10s
+
+# A monitor must never compete with the work on the host: lowest CPU share
+# under contention, and disk I/O only when the disk is otherwise idle.
+Nice=10
+CPUWeight=20
+IOSchedulingClass=idle
+
+# Runs as root for now: inspecting other users' processes needs
+# CAP_SYS_PTRACE + CAP_DAC_READ_SEARCH, and running with only those
+# capabilities is not tested yet.
+# cenziadah writes nothing on disk:
+ProtectSystem=full
+PrivateTmp=yes
+# NoNewPrivileges is deliberately not set: it would break setgid helpers some
+# MTAs' sendmail uses (e.g. postfix postdrop) when --mail-to is enabled.
+
+[Install]
+WantedBy=multi-user.target
