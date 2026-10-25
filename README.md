@@ -134,20 +134,6 @@ scripts/            baseline/check every Docker container on a host
 
 SemVer. The version lives in `internal/version`; `CHANGELOG.md` is updated on every release.
 
-## Releasing to GitHub
-
-Development happens on gitlab; public releases go to github.com/paulborile/Cenziadah, cloned at
-`../../git/Cenziadah` (override with `PROD_REPO=`).
-
-1. Commit everything for the release on gitlab (only **committed** files are released), with the
-   version bumped and a `## [vX.Y.Z]` CHANGELOG section.
-2. `make production DRY_RUN=1`: preview what the sync would change in the clone.
-3. `make production`: tests, builds the .deb/.rpm, syncs the tree into the clone (minus
-   `packaging/production-exclude`), writes the release notes and checksums, and prints the git
-   commands for step 4. It changes no git state.
-4. In the clone: review `git status`, then commit, tag `vX.Y.Z` and push the branch and tag.
-5. `make github-release`: creates the GitHub release with the packages, checksums and notes.
-
 ## License
 
 Cenziadah is free software, licensed under the **GNU Affero General Public License v3.0 or
